@@ -1,5 +1,6 @@
-# Facebook-Meme-Predcition
-Multimodal hateful meme classification using BERT, ResNet50, and CLIP, with model comparison and error analysis on the Facebook Hateful Memes dataset.
+# Facebook Meme Prediction
+
+A multimodal deep learning project for detecting hateful memes using both textual and visual information from the Facebook Hateful Memes dataset.
 
 ## 📌 Project Overview
 
@@ -9,10 +10,10 @@ This project explores whether combining Natural Language Processing (NLP) and Co
 
 Multiple approaches were implemented and compared:
 
-- BERT — Text-only classification
-- ResNet50 — Image-only classification
-- BERT + ResNet50 — Multimodal feature fusion
-- CLIP — Multimodal image-text representation
+- **BERT** — Text-only classification
+- **ResNet50** — Image-only classification
+- **BERT + ResNet50** — Multimodal feature fusion
+- **CLIP** — Multimodal image-text representation
 
 The primary evaluation metric for the dataset is **AUROC**, along with Accuracy, Precision, Recall and F1-score.
 
@@ -46,53 +47,109 @@ The validation set used in this project contains **500 samples**, with 250 examp
 
 ---
 
-## 🧠 Models
+## 🧠 Model Architectures
 
-### 1. BERT — Text Classification
+The project evaluates four different approaches for hateful meme classification.
 
-BERT was used to extract contextual representations from the meme text.
+### Overall Architecture
 
-Meme Text
-    ↓
-BERT
-    ↓
-[CLS] Representation (768)
-    ↓
-Classification Layer
-    ↓
-Hateful / Not Hateful
-
-### 2. ResNet50 — Image Classification
-
-Meme Image
-    ↓
-ResNet50
-    ↓
-2048-D Image Features
-    ↓
-Dense Classifier
-    ↓
-Hateful / Not Hateful
+    FACEBOOK HATEFUL MEMES
+              |
+      +-------+-------+
+      |       |       |
+      v       v       v
+     TEXT   IMAGE  TEXT + IMAGE
+      |       |       |
+      v       v       v
+    BERT  ResNet50  BERT + ResNet50
+      |       |       |
+    768-D  2048-D   2816-D
+      |       |       |
+      v       v       v
+ Classifier Classifier Fusion Classifier
+      |       |       |
+      +-------+-------+
+              |
+              v
+      Hateful / Not Hateful
 
 
-### 3.BERT + ResNet50 — Multimodal Fusion
+### CLIP Architecture
 
-Text → BERT → 768-D
-                  \
-                   → Concatenate → 2816-D → Classifier
-                  /
-Image → ResNet → 2048-D
+    TEXT                         IMAGE
+      |                            |
+      v                            v
+    CLIP Text                 CLIP Vision
+    Encoder                     Encoder
+      |                            |
+      v                            v
+    512-D                        512-D
+      \                            /
+       \                          /
+        +------ Concatenate -----+
+                    |
+                    v
+                 1024-D
+                    |
+                    v
+              Dense Layer (256)
+                    |
+                    v
+                  ReLU
+                    |
+                    v
+              Dropout (0.3)
+                    |
+                    v
+                Output
+                    |
+                    v
+          Hateful / Not Hateful
 
+### 1. BERT — Text-Only Classification
 
-### 4. CLIP — Multimodal Representation
+BERT was used to process the textual content of each meme.
 
-Text → CLIP Text Encoder → 512-D
-                              \
-                               → 1024-D → Classifier
-                              /
-Image → CLIP Vision Encoder → 512-D
+The `[CLS]` representation was extracted from BERT and used as the input to a binary classification layer.
 
+BERT produces a **768-dimensional contextual representation** for the text.
 
+### 2. ResNet50 — Image-Only Classification
+
+A pretrained ResNet50 model was used to extract visual features from the meme images.
+
+The original ImageNet classification head was removed and the network was used as a visual feature extractor.
+
+This produced **2048-dimensional image features**, which were passed to a small classification network.
+
+### 3. BERT + ResNet50 — Multimodal Classification
+
+The BERT text representation and ResNet50 image representation were combined using feature-level fusion.
+
+- BERT representation: **768 dimensions**
+- ResNet50 representation: **2048 dimensions**
+- Combined representation: **2816 dimensions**
+
+The combined representation was passed through:
+
+`Dense(256) → ReLU → Dropout(0.3) → Output`
+
+### 4. CLIP — Multimodal Classification
+
+CLIP was used to obtain jointly learned representations for the text and image modalities.
+
+The CLIP text and vision encoders produced:
+
+- Text embedding: **512 dimensions**
+- Image embedding: **512 dimensions**
+
+These were concatenated into a **1024-dimensional multimodal representation** and passed through a small classification network.
+
+The CLIP backbone was frozen during feature extraction, while the downstream classifier was trained for the hateful meme classification task.
+
+---
+
+## 📈 Model Performance
 
 | Model | Accuracy | Precision | Recall | F1 Score | AUROC |
 |---|---:|---:|---:|---:|---:|
@@ -101,52 +158,87 @@ Image → CLIP Vision Encoder → 512-D
 | BERT + ResNet50 | **0.5740** | **0.6697** | **0.2920** | **0.4067** | 0.6243 |
 | CLIP | 0.5500 | 0.6374 | 0.2320 | 0.3402 | **0.6395** |
 
+### CLIP Confusion Matrix
 
-The results show that the models were able to learn some discriminative signal, but performance on the hateful class remained limited.
-In particular, the CLIP model achieved an AUROC of 0.6395, while its recall for the hateful class was 23.2%.
-These results motivated further error analysis to understand where the models struggled.
+    [[217  33]
+     [192  58]]
 
-
-##Error Analysis:
-Error analysis was performed on the validation predictions, with particular attention to false negatives and false positives.
 The CLIP model produced:
-- 192 False Negatives
-- 33 False Positives
+
+- True Negatives: **217**
+- False Positives: **33**
+- False Negatives: **192**
+- True Positives: **58**
+
+### Key Observations
+
+The models learned meaningful discriminative signal, but performance on the hateful class remained limited.
+
+The CLIP model achieved an **AUROC of 0.6395**, with a hateful-class recall of **23.2%**.
+
+The BERT + ResNet50 model achieved the highest F1 score among the evaluated models at **0.4067**.
+
+These results demonstrate that simply combining pretrained representations does not automatically guarantee improved performance. The effectiveness of multimodal learning depends on how information from different modalities is represented, aligned and fused.
+
+---
+
+## 🔍 Error Analysis
+
+Error analysis was performed on the validation predictions, with particular attention to false negatives and false positives.
+
+The CLIP model produced:
+
+- **192 False Negatives**
+- **33 False Positives**
+
 Several false-negative examples contained hateful or mocking content but were classified as non-hateful with high confidence.
+
 This highlights the difficulty of detecting hateful meaning when interpretation depends on the interaction between text, visual context and the underlying message.
+
 Some representative examples are included in the project notebooks.
-Note: Some examples from the original dataset contain offensive or sensitive content. They are included only for model evaluation and error analysis.
 
+> **Note:** Some examples from the original dataset contain offensive or sensitive content. They are included only for model evaluation and error analysis.
 
-##Technologies Used:
-Python
-TensorFlow / Keras
-KerasHub
-Hugging Face Transformers
-BERT
-ResNet50
-CLIP
-NumPy
-Pandas
-Scikit-learn
-Matplotlib
-Google Colab
+---
 
-##Project Structure:
-Facebook-Meme-Prediction/
-│
-├── notebooks/
-│   ├── EDA
-│   ├── BERT
-│   ├── ResNet50
-│   ├── BERT_ResNet_Multimodal
-│   └── CLIP
-│
-├── README.md
-└── requirements.txt
+## 🛠️ Technologies Used
 
-##Key Learnings:
+- Python
+- TensorFlow
+- Keras
+- KerasHub
+- Hugging Face Transformers
+- BERT
+- ResNet50
+- CLIP
+- NumPy
+- Pandas
+- Scikit-learn
+- Matplotlib
+- Google Colab
+
+---
+
+## 📂 Project Structure
+
+    Facebook-Meme-Prediction/
+    │
+    ├── notebooks/
+    │   ├── EDA
+    │   ├── BERT
+    │   ├── ResNet50
+    │   ├── BERT_ResNet_Multimodal
+    │   └── CLIP
+    │
+    ├── README.md
+    └── requirements.txt
+
+---
+
+## 🎯 Key Learnings
+
 This project provided practical experience with:
+
 - Text classification using BERT
 - Transfer learning with ResNet50
 - Multimodal feature fusion
@@ -157,11 +249,15 @@ This project provided practical experience with:
 - Confusion matrix analysis
 - Error analysis
 - Working with pretrained deep learning models
-One of the key findings was that combining modalities does not automatically guarantee better performance. The effectiveness of multimodal learning depends on how information from the different modalities is represented, aligned and fused.
 
+One of the key findings was that **combining modalities does not automatically guarantee better performance**. The effectiveness of multimodal learning depends on how information from the different modalities is represented, aligned and fused.
 
-##Future Improvements
+---
+
+## 🚀 Future Improvements
+
 Potential improvements include:
+
 - Fine-tuning CLIP instead of using frozen representations
 - Joint fine-tuning of BERT and ResNet
 - Attention-based multimodal fusion
@@ -169,10 +265,13 @@ Potential improvements include:
 - More advanced vision-language models
 - Hyperparameter optimization
 - More extensive error analysis
-- Improved handling of class imbalance and false negatives.
+- Improved handling of false negatives
+- Exploring stronger multimodal fusion strategies
 
+---
 
-##References
+## 📚 References
+
 - Facebook/Meta Hateful Memes Dataset
 - BERT: Bidirectional Encoder Representations from Transformers
 - ResNet: Deep Residual Learning for Image Recognition
@@ -180,6 +279,3 @@ Potential improvements include:
 - TensorFlow / Keras
 - KerasHub
 - Hugging Face Transformers
-
-
-
