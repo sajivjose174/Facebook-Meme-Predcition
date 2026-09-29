@@ -1,8 +1,5 @@
 # Facebook-Meme-Predcition
 Multimodal hateful meme classification using BERT, ResNet50, and CLIP, with model comparison and error analysis on the Facebook Hateful Memes dataset.
-# Facebook Meme Prediction
-
-A multimodal deep learning project for detecting hateful memes using both textual and visual information from the Facebook Hateful Memes dataset.
 
 ## 📌 Project Overview
 
