@@ -52,7 +52,6 @@ The validation set used in this project contains **500 samples**, with 250 examp
 
 BERT was used to extract contextual representations from the meme text.
 
-```text
 Meme Text
     ↓
 BERT
