@@ -154,9 +154,9 @@ The CLIP backbone was frozen during feature extraction, while the downstream cla
 | Model | Accuracy | Precision | Recall | F1 Score | AUROC |
 |---|---:|---:|---:|---:|---:|
 | BERT | 0.5500 | 0.6263 | 0.2480 | 0.3553 | 0.6359 |
-| ResNet50 | 0.5360 | — | — | — | — |
-| BERT + ResNet50 | **0.5740** | **0.6697** | **0.2920** | **0.4067** | 0.6243 |
-| CLIP | 0.5500 | 0.6374 | 0.2320 | 0.3402 | **0.6395** |
+| ResNet50 | 0.4840 | 0.3750 | 0.0480 | 0.0851 | 0.5300 |
+| BERT + ResNet50 | 0.5740 | 0.6697 | 0.2920 | 0.4067 | 0.6243 |
+| CLIP | 0.5500 | 0.6374 | 0.2320 | 0.3402 | 0.6395 |
 
 ### CLIP Confusion Matrix
 
@@ -172,11 +172,12 @@ The CLIP model produced:
 
 ### Key Observations
 
-The models learned meaningful discriminative signal, but performance on the hateful class remained limited.
 
-The CLIP model achieved an **AUROC of 0.6395**, with a hateful-class recall of **23.2%**.
-
-The BERT + ResNet50 model achieved the highest F1 score among the evaluated models at **0.4067**.
+- **BERT** achieved an AUROC of 0.6359, showing that the textual content contains useful information for classification.
+- **ResNet50**, using image information alone, achieved an AUROC of 0.5300 and a hateful-class recall of only 0.0480. This indicates that visual information alone was not sufficient to reliably identify hateful memes in this experiment.
+- **BERT + ResNet50** improved accuracy, precision, recall and F1 compared with the individual BERT baseline, although its AUROC was 0.6243.
+- **CLIP** achieved the highest AUROC among the tested models at 0.6395, although its hateful-class recall remained relatively low at 0.2320.
+- Overall, the results highlight the difficulty of hateful meme classification and the importance of understanding the interaction between visual and textual information rather than relying on either modality independently.
 
 These results demonstrate that simply combining pretrained representations does not automatically guarantee improved performance. The effectiveness of multimodal learning depends on how information from different modalities is represented, aligned and fused.
 
